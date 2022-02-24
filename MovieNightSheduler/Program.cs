@@ -1,10 +1,19 @@
+using MovieNightSheduler.Models;
+using MySqlConnector;
+
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration["ConnectionStrings:Default"];
+
 
 // Add services to the container.
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddTransient<MySqlConnection>(_ => new MySqlConnection("ConnectionStrings:Default"));
+
 
 var app = builder.Build();
+
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

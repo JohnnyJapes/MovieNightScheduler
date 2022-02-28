@@ -1,14 +1,16 @@
 using MovieNightSheduler.Models;
 using MySqlConnector;
+using MovieNightSheduler;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration["ConnectionStrings:Default"];
 
-
 // Add services to the container.
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddTransient<MySqlConnection>(_ => new MySqlConnection("ConnectionStrings:Default"));
+builder.Services.AddSingleton<DapperContext>();
+
+builder.Services.AddTransient<AppDb>(_ => new AppDb(connectionString));
 
 
 var app = builder.Build();

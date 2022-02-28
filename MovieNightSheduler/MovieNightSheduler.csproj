@@ -11,7 +11,7 @@
     <SpaProxyServerUrl>https://localhost:44424</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>0ba1dff6-5d08-4b27-8e38-9df491af0533</UserSecretsId>
+    <UserSecretsId>d1f32add-2a94-452c-b742-ed7c21ef43fa</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

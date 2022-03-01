@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using Dapper;
+using Dapper.Contrib;
 using System.Threading.Tasks;
 using MySqlConnector;
 using System.Collections.Generic;
@@ -83,6 +84,10 @@ namespace MovieNightSheduler.Models
     }
     public class User
     {
+        public User()
+        {
+            this.Groups = new List<Group>();
+        }
         public int Id { get; set; }
         public string Username { get; set; }   
         public string Password { get; set; } 

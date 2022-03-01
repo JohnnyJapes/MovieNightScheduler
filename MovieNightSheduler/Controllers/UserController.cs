@@ -7,7 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Dapper.Contrib;
+using Dapper.Contrib.Extensions;
 
 namespace MovieNightSheduler.Controllers
 {
@@ -52,18 +52,16 @@ namespace MovieNightSheduler.Controllers
                return BadRequest(ex.Message); 
             }
 
-            /*    using (var connection = _context.CreateConnection())
-                {
-                    var Groups = await connection.QueryAsync<Group>(query);
-                    return Ok(Groups.ToList());
-                }*/
-
-            //var results = await Db.Connection.QueryAsync<User>(query);
-
 
         }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUserById(int id)
+        {
+            var user = await Db.Connection.GetAsync<User>(id);
+            return Ok(user);
+        }
         [HttpPost]
-        public async Task<IActionResult> Post(User newUser)
+        public async Task<IActionResult> CreateUser(User newUser)
         {
             var query = "Insert into Users(username, password) values(@Username, @Password)";
             var parameters = new DynamicParameters();
@@ -71,7 +69,8 @@ namespace MovieNightSheduler.Controllers
             parameters.Add("Password", newUser.Password, DbType.String);
             try
             {
-                await Db.Connection.ExecuteAsync(query, parameters);
+                int rows = await Db.Connection.ExecuteAsync(query, parameters);
+                if (rows == 0) return BadRequest("Please use a unique name");
             }
             catch (Exception ex)
             {
@@ -84,21 +83,24 @@ namespace MovieNightSheduler.Controllers
 
         }
         [HttpPut]
-        public async Task<IActionResult> Put(User User)
+        //assumes Id is provided in user object
+        public async Task<IActionResult> UpdateUser(User User)
         {
-         //   var query = "update Users set password = @password where username=@username";
-            var parameters = new DynamicParameters();
-            parameters.Add("Username", User.Username, DbType.String);
-         //   parameters.Add("Password", User.Password, DbType.String);
-            var query = "select Id from Users where username='asd'";
-            var results = await Db.Connection.QueryAsync<User>(query);
-            Console.WriteLine(results.ToList());
+            //   var query = "update Users set password = @password where username=@username";
+            /*     var parameters = new DynamicParameters();
+                 parameters.Add("Username", User.Username, DbType.String);
+                 //   parameters.Add("Password", User.Password, DbType.String);
+                 var query = "select Id from Users where username='asd'";
+                 var results = await Db.Connection.QueryAsync<User>(query);
+                 Console.WriteLine(results.ToList());*/
 
 
             //   await Db.Connection.ExecuteAsync(query, parameters);
-           // await Db.Connection.Update
+            // await Db.Connection.Update
 
-            return Ok(results.ToList());
+            bool result = await Db.Connection.UpdateAsync(User);
+            if (result) return Ok("Update Successful");
+            else return BadRequest("Update Failed");
 
         }
 

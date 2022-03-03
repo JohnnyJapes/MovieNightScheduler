@@ -1,6 +1,7 @@
 using MovieNightSheduler.Models;
 using MySqlConnector;
 using MovieNightSheduler;
+using MovieNightSheduler.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration["ConnectionStrings:Default"];
@@ -11,6 +12,16 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<DapperContext>();
 
 builder.Services.AddTransient<AppDb>(_ => new AppDb(connectionString));
+builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromSeconds(10);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 
 var app = builder.Build();
@@ -27,6 +38,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession();
 
 
 app.MapControllerRoute(

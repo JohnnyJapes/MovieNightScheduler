@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using MovieNightSheduler.Models;
@@ -8,9 +9,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Dapper.Contrib.Extensions;
+using MovieNightSheduler.Authorization;
+using MovieNightSheduler.Services;
+
 
 namespace MovieNightSheduler.Controllers
 {
+    using BCrypt.Net;
+    //[Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class UserController : Controller
@@ -18,12 +24,13 @@ namespace MovieNightSheduler.Controllers
 
          public AppDb Db { get; set; }
        // private readonly ILogger<UserController> _logger;
+         private IUserService _userService;
 
-        public UserController(AppDb db)
+        public UserController(AppDb db, IUserService userService)
         {
             Db = db;
+            _userService = userService;
         }
- 
 
         /*public UserController(ILogger<UserController> logger)
         {
@@ -36,7 +43,7 @@ namespace MovieNightSheduler.Controllers
         {
             //await Db.Connection.OpenAsync();
            // var query = "SELECT * FROM Users";
-           string username = User.Username;
+           //string username = User.Username;
             var parameters = new DynamicParameters();
             parameters.Add("Username", User.Username, DbType.String);
             //   parameters.Add("Password", User.Password, DbType.String);
@@ -54,6 +61,17 @@ namespace MovieNightSheduler.Controllers
 
 
         }
+        [AllowAnonymous]
+        [HttpPost("authenticate")]
+        public async Task<IActionResult> Authenticate([FromBody] UserAuth model)
+        {
+            var user = await _userService.Authenticate(model.Username, model.Password);
+
+            if (user == null)
+                return BadRequest(new { message = "Username or password is incorrect" });
+
+            return Ok(user);
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
@@ -65,8 +83,9 @@ namespace MovieNightSheduler.Controllers
         {
             var query = "Insert into Users(username, password) values(@Username, @Password)";
             var parameters = new DynamicParameters();
+            string passwordHash = BCrypt.HashPassword(newUser.Password);
             parameters.Add("Username", newUser.Username, DbType.String);
-            parameters.Add("Password", newUser.Password, DbType.String);
+            parameters.Add("Password", passwordHash, DbType.String);
             try
             {
                 int rows = await Db.Connection.ExecuteAsync(query, parameters);
@@ -97,11 +116,17 @@ namespace MovieNightSheduler.Controllers
 
             //   await Db.Connection.ExecuteAsync(query, parameters);
             // await Db.Connection.Update
-
+            if (User.Id == 0) return BadRequest("No Id");
             bool result = await Db.Connection.UpdateAsync(User);
             if (result) return Ok("Update Successful");
             else return BadRequest("Update Failed");
-
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            bool result = await Db.Connection.DeleteAsync(new User() { Id = id });
+            if (result) return Ok("Deletion Successful");
+            else return BadRequest("Deletion Failed");
         }
 
 

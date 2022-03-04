@@ -1,10 +1,12 @@
 using MovieNightScheduler.Models;
 using MySqlConnector;
 using MovieNightScheduler;
+using MovieNightScheduler.Helpers;
 using MovieNightScheduler.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration["ConnectionStrings:Default"];
+builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
 // Add services to the container.
 

@@ -83,7 +83,7 @@ namespace MovieNightScheduler.Controllers
         {
             var query = "Insert into Users(username, password) values(@Username, @Password)";
             var parameters = new DynamicParameters();
-            string passwordHash = BCrypt.HashPassword(newUser.Password);
+            string passwordHash = BCrypt.HashPassword(newUser.PasswordHash);
             parameters.Add("Username", newUser.Username, DbType.String);
             parameters.Add("Password", passwordHash, DbType.String);
             try

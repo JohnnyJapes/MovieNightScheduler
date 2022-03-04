@@ -3,9 +3,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Data;
 using System.Text;
 using MovieNightScheduler.Models;
 using MovieNightScheduler.Helpers;
+using Dapper;
 
 namespace MovieNightScheduler.Authorization
 {
@@ -63,6 +65,36 @@ namespace MovieNightScheduler.Authorization
                 
             }
             catch { return null; }
+        }
+
+        public RefreshToken GenerateRefreshToken(string ipAddress)
+        {
+            var refreshToken = new RefreshToken
+            {
+                Token = getUniqueToken(),
+                //token is valid for 5 days
+                Expires = DateTime.UtcNow.AddDays(5),
+                Created = DateTime.UtcNow,
+                CreatedByIp = ipAddress
+            };
+            return refreshToken;
+
+            string getUniqueToken()
+            {
+                // token is a cryptographically strong random sequence of values
+                var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+                var parameters = new DynamicParameters();
+                parameters.Add(token, token, DbType.String);
+                // ensure token is unique by checking against db
+                var query = "select id, token from users JOIN tokens on users.Id = tokens.userId where token = @token";
+                var tokenIsUnique = Db.Connection.Query(query, parameters);
+                    //!_context.Users.Any(u => u.RefreshTokens.Any(t => t.Token == token));
+
+                if (!tokenIsUnique.First().id)
+                    return getUniqueToken();
+
+                return token;
+            }
         }
     }
 }

@@ -93,7 +93,7 @@ namespace MovieNightScheduler.Models
         public string Username { get; set; }
         public List<Group> Groups { get; set; }
         [JsonIgnore]
-        public string Password { get; set; }
+        public string PasswordHash { get; set; }
         [JsonIgnore]
         public List<RefreshToken> RefreshTokens { get; set; }
         // public string Last_name { get; set; } 

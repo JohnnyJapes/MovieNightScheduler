@@ -1,13 +1,19 @@
 ﻿using MovieNightScheduler.Models;
+using System.Data;
 using Dapper;
 using Dapper.Contrib.Extensions;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace MovieNightScheduler.Services
 {
+    using Dapper;
+    using Dapper.Contrib.Extensions;
     using BCrypt.Net;
     public interface IUserService
     {
         Task<User> Authenticate(string username, string password);
+        User GetById(int id);
       //  Task<IEnumerable<User>> GetAll();
     }
 
@@ -16,7 +22,6 @@ namespace MovieNightScheduler.Services
         
         // users hardcoded for simplicity, store in a db with hashed passwords in production applications
         public AppDb Db { get; set; }
-        // private readonly ILogger<UserController> _logger;
 
         public UserService(AppDb db)
         {
@@ -26,15 +31,18 @@ namespace MovieNightScheduler.Services
         public async Task<User> Authenticate(string username, string password)
         {
             // wrapped in "await Task.Run" fetching user from a db
-            User temp = new User{ Username= username, Password= password};
+            //User temp = new User{ Username= username, Password= password};
+            var parameters = new DynamicParameters();
+            parameters.Add("Username", username, DbType.String);
+            //parameters.Add("Password", password, DbType.String);
             var query = "select Id, Username, Password from Users where username=@username";
             try
             {
-                var results = await Db.Connection.QueryAsync<User>(query, temp);
+                var results = await Db.Connection.QueryAsync<User>(query, parameters);
                 Console.WriteLine(results.First().Username);
-                Console.WriteLine(results.First().Password);
-                await Task.Run(() => results.SingleOrDefault(x => x.Username == username && BCrypt.Verify(password, x.Password)));
-                Console.WriteLine(BCrypt.Verify(temp.Password, results.First().Password));
+                Console.WriteLine(results.First().PasswordHash);
+                await Task.Run(() => results.SingleOrDefault(x => x.Username == username && BCrypt.Verify(password, x.PasswordHash)));
+                Console.WriteLine(BCrypt.Verify(password, results.First().PasswordHash));
                 var user = await Db.Connection.GetAsync<User>(results.First().Id);
                 return user;
             }
@@ -45,13 +53,19 @@ namespace MovieNightScheduler.Services
             }
 
         }
+        public User GetById(int id)
+        {
+            var user = Db.Connection.Get<User>(id);
+            if (user == null) throw new KeyNotFoundException("User not found");
+            return user;
+        }
 
-      //  public async Task<IEnumerable<User>> GetAll()
-     //   {
-            // wrapped in "await Task.Run" to mimic fetching users from a db
-            // return await Task.Run(() => _users);
-      //      return User; 
-      //  }
+        //  public async Task<IEnumerable<User>> GetAll()
+        //   {
+        // wrapped in "await Task.Run" to mimic fetching users from a db
+        // return await Task.Run(() => _users);
+        //      return User; 
+        //  }
     }
 
 }

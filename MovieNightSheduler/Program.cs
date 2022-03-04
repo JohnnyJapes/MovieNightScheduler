@@ -1,7 +1,7 @@
-using MovieNightSheduler.Models;
+using MovieNightScheduler.Models;
 using MySqlConnector;
-using MovieNightSheduler;
-using MovieNightSheduler.Services;
+using MovieNightScheduler;
+using MovieNightScheduler.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration["ConnectionStrings:Default"];

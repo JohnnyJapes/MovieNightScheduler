@@ -1,8 +1,8 @@
-﻿using MovieNightSheduler.Models;
+﻿using MovieNightScheduler.Models;
 using Dapper;
 using Dapper.Contrib.Extensions;
 
-namespace MovieNightSheduler.Services
+namespace MovieNightScheduler.Services
 {
     using BCrypt.Net;
     public interface IUserService

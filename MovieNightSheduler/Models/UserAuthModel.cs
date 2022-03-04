@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-namespace MovieNightSheduler.Models
+namespace MovieNightScheduler.Models
 {
     public class UserAuth
     {

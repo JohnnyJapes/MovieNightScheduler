@@ -1,8 +1,8 @@
 ﻿
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using MovieNightSheduler.Models;
-namespace MovieNightSheduler.Authorization;
+using MovieNightScheduler.Models;
+namespace MovieNightScheduler.Authorization;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class AuthorizeAttribute : Attribute, IAuthorizationFilter
 {

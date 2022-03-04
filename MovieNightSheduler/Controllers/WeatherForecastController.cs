@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace MovieNightSheduler.Controllers
+namespace MovieNightScheduler.Controllers
 {
     [ApiController]
     [Route("[controller]")]

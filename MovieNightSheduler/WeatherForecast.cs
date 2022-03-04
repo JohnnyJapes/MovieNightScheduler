@@ -1,4 +1,4 @@
-namespace MovieNightSheduler
+namespace MovieNightScheduler
 {
     public class WeatherForecast
     {

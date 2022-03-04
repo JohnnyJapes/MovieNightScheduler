@@ -2,18 +2,18 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
-using MovieNightSheduler.Models;
+using MovieNightScheduler.Models;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Dapper.Contrib.Extensions;
-using MovieNightSheduler.Authorization;
-using MovieNightSheduler.Services;
+using MovieNightScheduler.Authorization;
+using MovieNightScheduler.Services;
 
 
-namespace MovieNightSheduler.Controllers
+namespace MovieNightScheduler.Controllers
 {
     using BCrypt.Net;
     //[Authorize]

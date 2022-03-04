@@ -6,7 +6,7 @@ using MySqlConnector;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MovieNightSheduler.Models
+namespace MovieNightScheduler.Models
 {
     public class Group
     {

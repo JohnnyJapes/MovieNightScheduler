@@ -2,7 +2,7 @@
 using MySqlConnector;
 using System.Data;
 
-namespace MovieNightSheduler
+namespace MovieNightScheduler
 {
     public class AppDb : IDisposable
     {

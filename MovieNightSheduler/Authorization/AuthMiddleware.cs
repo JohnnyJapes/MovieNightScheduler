@@ -1,8 +1,8 @@
 ﻿
 using System.Net.Http.Headers;
 using System.Text;
-using MovieNightSheduler.Services;
-namespace MovieNightSheduler.Authorization
+using MovieNightScheduler.Services;
+namespace MovieNightScheduler.Authorization
 {
     public class AuthMiddleware
     {

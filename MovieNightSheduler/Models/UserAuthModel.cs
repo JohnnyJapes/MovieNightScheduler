@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 namespace MovieNightScheduler.Models
 {
-    public class UserAuth
+    public class AuthRequest
     {
         [Required]
         public string Username { get; set; }
@@ -17,6 +17,14 @@ namespace MovieNightScheduler.Models
         public string JwtToken { get; set; }
         [JsonIgnore]
         public string RefreshToken { get; set; }
+
+        public AuthResponse(User user, string jwtToken, string refreshToken)
+        {
+            Id = user.Id;
+            Username = user.Username;
+            JwtToken = jwtToken;
+            RefreshToken = refreshToken;
+        }
     
     }
 

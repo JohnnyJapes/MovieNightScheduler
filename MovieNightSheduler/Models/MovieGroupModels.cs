@@ -88,6 +88,7 @@ namespace MovieNightScheduler.Models
         public User()
         {
             this.Groups = new List<Group>();
+            this.RefreshTokens = new List<RefreshToken>();
         }
         public int Id { get; set; }
         public string Username { get; set; }

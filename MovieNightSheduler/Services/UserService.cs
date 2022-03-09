@@ -16,6 +16,7 @@ namespace MovieNightScheduler.Services
     {
         AuthResponse Authenticate(AuthRequest req, string ipAddress);
         AuthResponse RefreshToken(string token, string ipAddress);
+        void RevokeToken(string token, string ipAddress);
         User GetById(int id);
       //  Task<IEnumerable<User>> GetAll();
     }
@@ -117,6 +118,17 @@ namespace MovieNightScheduler.Services
 
             return new AuthResponse(user, jwtToken, newRefreshToken.Token);
 
+        }
+
+        public void RevokeToken(string token, string ipAddress)
+        {
+            var user = getUserByRefreshToken(token);
+            var refreshToken = user.RefreshTokens.Single(x => x.Token == token);
+            if (!refreshToken.IsActive)
+                throw new AppException("Invalid Token");
+            //revoke token
+            revokeRefreshToken(refreshToken, ipAddress, "Revoked without replacement");
+            Db.Connection.Update(refreshToken);
         }
 
         private  User getUserByRefreshToken(string token)

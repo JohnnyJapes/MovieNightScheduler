@@ -86,11 +86,11 @@ namespace MovieNightScheduler.Authorization
                 var parameters = new DynamicParameters();
                 parameters.Add(token, token, DbType.String);
                 // ensure token is unique by checking against db
-                var query = "select id, token from users JOIN tokens on users.Id = tokens.userId where token = @token";
+                var query = "select users.id, token from users JOIN refreshTokens on users.Id = userId where token = @token";
                 var tokenIsUnique = Db.Connection.Query(query, parameters);
                     //!_context.Users.Any(u => u.RefreshTokens.Any(t => t.Token == token));
 
-                if (!tokenIsUnique.First().id)
+                if (tokenIsUnique.Count() != 0)
                     return getUniqueToken();
 
                 return token;

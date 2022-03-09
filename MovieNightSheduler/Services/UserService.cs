@@ -14,8 +14,8 @@ namespace MovieNightScheduler.Services
     using BCrypt.Net;
     public interface IUserService
     {
-        AuthResponse Authenticate(AuthRequest req, string ipAddress);
-        AuthResponse RefreshToken(string token, string ipAddress);
+        Task<AuthResponse> Authenticate(AuthRequest req, string ipAddress);
+        Task<AuthResponse> RefreshToken(string token, string ipAddress);
         void RevokeToken(string token, string ipAddress);
         User GetById(int id);
       //  Task<IEnumerable<User>> GetAll();
@@ -36,7 +36,7 @@ namespace MovieNightScheduler.Services
             _appSettings = appSettings;
         }
 
-        public AuthResponse Authenticate(AuthRequest req, string ipAddress)
+        public async Task<AuthResponse> Authenticate(AuthRequest req, string ipAddress)
         {
             // wrapped in "await Task.Run" fetching user from a db
             //User temp = new User{ Username= username, Password= password};
@@ -45,7 +45,7 @@ namespace MovieNightScheduler.Services
             //parameters.Add("Password", password, DbType.String);
             var query = "select users.Id, Username, passwordHash, from Users where username=@username";
          
-            var results = Db.Connection.Query<User, RefreshToken, User>(query,
+            var results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query,
                 (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, parameters);
           //  Console.WriteLine(results.First().Username);
            // Console.WriteLine(results.First().PasswordHash);
@@ -54,8 +54,9 @@ namespace MovieNightScheduler.Services
             //Task.Run(() => results.SingleOrDefault(x => x.Username == req.Username && BCrypt.Verify(req.Password, x.PasswordHash)));
             Console.WriteLine(BCrypt.Verify(req.Password, results.First().PasswordHash));
             query = "select users.Id, Username, refreshTokens.Id, token, created, expires from Users left join refreshTokens on userId=users.Id where username=@username";
-            User user = Db.Connection.Query<User, RefreshToken, User>(query,
-                (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, parameters).First();
+            results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query,
+                (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, parameters);
+            User user = results.First();
 
             //var user =  Db.Connection.Get<User>(results.First().Id);
 
@@ -78,7 +79,7 @@ namespace MovieNightScheduler.Services
             //save changes to DB
             refreshToken.UserId = user.Id;
             query = "Insert into refreshTokens(token, created, expires, createdByIp) values(@token, @created, @expires, @createByIp) ";
-            var rowsChanged = Db.Connection.Execute(query, refreshToken);
+            var rowsChanged = await Db.Connection.ExecuteAsync(query, refreshToken);
             if (rowsChanged != 1)
                 throw new AppException("Database Insert Failed");
           /*  catch (Exception ex)
@@ -89,11 +90,11 @@ namespace MovieNightScheduler.Services
             return new AuthResponse(user, jwtToken, refreshToken.Token);
 
         }
-        public AuthResponse RefreshToken(string token, string ipAddress)
+        public async Task<AuthResponse> RefreshToken(string token, string ipAddress)
         {
-            var user = getUserByRefreshToken(token);
-            var query = "select id,userId,  token set token=@token,  where userId=@UserId";
-            getUserRefreshTokens(user);
+            var user = await getUserByRefreshToken(token);
+            //var query = "select id,userId,  token set token=@token,  where userId=@UserId";
+            await getUserRefreshTokens(user);
             var refreshToken = user.RefreshTokens.Single(x => x.Token == token);
 
             if (refreshToken.IsRevoked)
@@ -102,14 +103,14 @@ namespace MovieNightScheduler.Services
                 revokeDescendantRefreshTokens(refreshToken, user, ipAddress, $"Attempted reuse of revoked token: {token}");
                 List<RefreshToken> revokedTokens = user.RefreshTokens;
                 //query = "update refreshTokens set revoked=@revoked, revokedByIp=@revokedByIp, reasonRevoked=@reasonRevoked, replacedByToken=@replacedByToken where ";
-                Db.Connection.Update(revokedTokens);
+                await Db.Connection.UpdateAsync(revokedTokens);
             }
             if (!refreshToken.IsActive)
                 throw new AppException("Invalid Token");
             //replace old refresh token wtih new token (rotation)
             var newRefreshToken = rotateRefreshToken(refreshToken, ipAddress);
-            Db.Connection.Update(refreshToken);
-            Db.Connection.Insert(newRefreshToken);
+            bool update = await Db.Connection.UpdateAsync(refreshToken);
+            await Db.Connection.InsertAsync<RefreshToken>(newRefreshToken);
 
             //remove old refresh tokens
             removeOldRefreshTokens(user);
@@ -120,18 +121,18 @@ namespace MovieNightScheduler.Services
 
         }
 
-        public void RevokeToken(string token, string ipAddress)
+        public async void RevokeToken(string token, string ipAddress)
         {
-            var user = getUserByRefreshToken(token);
+            var user = await getUserByRefreshToken(token);
             var refreshToken = user.RefreshTokens.Single(x => x.Token == token);
             if (!refreshToken.IsActive)
                 throw new AppException("Invalid Token");
             //revoke token
             revokeRefreshToken(refreshToken, ipAddress, "Revoked without replacement");
-            Db.Connection.Update(refreshToken);
+            await Db.Connection.UpdateAsync(refreshToken);
         }
 
-        private  User getUserByRefreshToken(string token)
+        private async Task<User> getUserByRefreshToken(string token)
         {
             var query = "select " +
                 "users.Id, " +
@@ -143,7 +144,7 @@ namespace MovieNightScheduler.Services
                 "created, " +
                 "expires " +
                 "from Users join refreshTokens on users.id=tokens.userId where token=@token";
-            var results = Db.Connection.Query<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; } ,new { @token = token, } );
+            var results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; } ,new { @token = token, } );
             if (results.First() == null)
                 throw new AppException("Invalid Token");
             //User user = results.First();
@@ -155,7 +156,7 @@ namespace MovieNightScheduler.Services
             return results.First();
         }
 
-        private User getUserRefreshTokens(User user)
+        private async Task<User> getUserRefreshTokens(User user)
         {
             var query = "select " +
                "users.Id, " +
@@ -167,7 +168,7 @@ namespace MovieNightScheduler.Services
                "created, " +
                "expires " +
                "from Users left join refreshTokens on users.id=tokens.userId where username=@username";
-            var results = Db.Connection.Query<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, new { @username = user.Username });
+            var results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, new { @username = user.Username });
             if (results.First() == null)
                 throw new AppException("Invalid User");
             return results.First();

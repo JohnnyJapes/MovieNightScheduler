@@ -1,6 +1,8 @@
 using MovieNightScheduler.Models;
+using System.Text.Json.Serialization;
 using MySqlConnector;
 using MovieNightScheduler;
+using MovieNightScheduler.Authorization;
 using MovieNightScheduler.Helpers;
 using MovieNightScheduler.Services;
 
@@ -10,10 +12,12 @@ builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSet
 
 // Add services to the container.
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews().AddJsonOptions(x => x.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull); ;
 builder.Services.AddSingleton<DapperContext>();
 
 builder.Services.AddTransient<AppDb>(_ => new AppDb(connectionString));
+//DI for app services
+builder.Services.AddScoped<IJwtUtils, JwtUtils>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddDistributedMemoryCache();
@@ -42,6 +46,8 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 
+app.UseMiddleware<ErrorHandlerMiddleware>();
+app.UseMiddleware<AuthMiddleware>();
 
 app.MapControllerRoute(
     name: "default",

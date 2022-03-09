@@ -64,12 +64,14 @@ namespace MovieNightScheduler.Services
             
 
             //remove old tokens
-            // to be implemented removeOldRefreshTokens(user);
+            removeOldRefreshTokens(user);
             //remove inactive refresh tokens from user
-            List<RefreshToken> oldTokens = user.RefreshTokens.FindAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
+
+           /* List<RefreshToken> oldTokens = user.RefreshTokens.FindAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
             user.RefreshTokens.RemoveAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
             query = "delete from refreshTokens where id=@id";
-            Db.Connection.Execute(query, oldTokens);
+            Db.Connection.Execute(query, oldTokens);*/
+
             //add to user object
             user.RefreshTokens.Add(refreshToken);
             //save changes to DB
@@ -89,14 +91,31 @@ namespace MovieNightScheduler.Services
         public AuthResponse RefreshToken(string token, string ipAddress)
         {
             var user = getUserByRefreshToken(token);
-            var  query = "select id,userId,  tokens set token=@token,  where userId=@UserId";
+            var query = "select id,userId,  token set token=@token,  where userId=@UserId";
+            getUserRefreshTokens(user);
             var refreshToken = user.RefreshTokens.Single(x => x.Token == token);
 
             if (refreshToken.IsRevoked)
             {
-
+                            
+                revokeDescendantRefreshTokens(refreshToken, user, ipAddress, $"Attempted reuse of revoked token: {token}");
+                List<RefreshToken> revokedTokens = user.RefreshTokens;
+                //query = "update refreshTokens set revoked=@revoked, revokedByIp=@revokedByIp, reasonRevoked=@reasonRevoked, replacedByToken=@replacedByToken where ";
+                Db.Connection.Update(revokedTokens);
             }
+            if (!refreshToken.IsActive)
+                throw new AppException("Invalid Token");
+            //replace old refresh token wtih new token (rotation)
+            var newRefreshToken = rotateRefreshToken(refreshToken, ipAddress);
+            Db.Connection.Update(refreshToken);
+            Db.Connection.Insert(newRefreshToken);
 
+            //remove old refresh tokens
+            removeOldRefreshTokens(user);
+
+            var jwtToken = JwtUtils.GenerateJwtToken(user);
+
+            return new AuthResponse(user, jwtToken, newRefreshToken.Token);
 
         }
 
@@ -124,11 +143,39 @@ namespace MovieNightScheduler.Services
             return results.First();
         }
 
+        private User getUserRefreshTokens(User user)
+        {
+            var query = "select " +
+               "users.Id, " +
+               "users.Username, " +
+               "refreshTokens.Id, " +
+               "token, " +
+               "revoked, " +
+               "replacedByToken, " +
+               "created, " +
+               "expires " +
+               "from Users left join refreshTokens on users.id=tokens.userId where username=@username";
+            var results = Db.Connection.Query<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, new { @username = user.Username });
+            if (results.First() == null)
+                throw new AppException("Invalid User");
+            return results.First();
+        }
+        private RefreshToken rotateRefreshToken(RefreshToken refreshToken, string ipAddress)
+        {
+            var newToken = JwtUtils.GenerateRefreshToken(ipAddress);
+            revokeRefreshToken(refreshToken, ipAddress, "replaced by new token", newToken.Token);
+            return newToken;
+        }
+
 
         private void removeOldRefreshTokens(User user)
         {
             //remove inactive refresh tokes from user
+            //user.RefreshTokens.RemoveAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
+            List<RefreshToken> oldTokens = user.RefreshTokens.FindAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
             user.RefreshTokens.RemoveAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
+            string query = "delete from refreshTokens where id=@id";
+            Db.Connection.Execute(query, oldTokens);
         }
 
         private void revokeDescendantRefreshTokens(RefreshToken refreshToken, User user, string ipAddress, string reason)

@@ -16,7 +16,7 @@ using MovieNightScheduler.Services;
 namespace MovieNightScheduler.Controllers
 {
     using BCrypt.Net;
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class UserController : Controller
@@ -63,15 +63,38 @@ namespace MovieNightScheduler.Controllers
         }
         [AllowAnonymous]
         [HttpPost("authenticate")]
-        public async Task<IActionResult> Authenticate([FromBody] UserAuth model)
+        public async Task<IActionResult> Authenticate([FromBody] AuthRequest model)
         {
-            var user = await _userService.Authenticate(model.Username, model.Password);
+            var response = await _userService.Authenticate(model, ipAddress());
 
-            if (user == null)
+/*            if (response == null)
                 return BadRequest(new { message = "Username or password is incorrect" });
-
-            return Ok(user);
+*/
+            return Ok(response);
         }
+        [AllowAnonymous]
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+            var response = await _userService.RefreshToken(refreshToken, ipAddress());
+            setTokenCookie(response.RefreshToken);
+            return Ok(response);
+
+        }
+        [HttpPost("revoke-token")]
+        public IActionResult RevokeToken(RevokeTokenRequest model)
+        {
+            // accept refresh token in request body or cookie
+            var token = model.Token ?? Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(token))
+                return BadRequest(new { message = "Token is required" });
+
+            _userService.RevokeToken(token, ipAddress());
+            return Ok(new { message = "Token revoked" });
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
@@ -127,6 +150,24 @@ namespace MovieNightScheduler.Controllers
             bool result = await Db.Connection.DeleteAsync(new User() { Id = id });
             if (result) return Ok("Deletion Successful");
             else return BadRequest("Deletion Failed");
+        }
+        private void setTokenCookie(string token)
+        {
+            // append cookie with refresh token to the http response
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(5)
+            };
+            Response.Cookies.Append("refreshToken", token, cookieOptions);
+        }
+        private string ipAddress()
+        {
+            // get source ip address for the current request
+            if (Request.Headers.ContainsKey("X-Forwarded-For"))
+                return Request.Headers["X-Forwarded-For"];
+            else
+                return HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
         }
 
 

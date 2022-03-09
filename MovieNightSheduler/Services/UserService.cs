@@ -42,7 +42,7 @@ namespace MovieNightScheduler.Services
             var parameters = new DynamicParameters();
             parameters.Add("Username", req.Username, DbType.String);
             //parameters.Add("Password", password, DbType.String);
-            var query = "select users.Id, Username, passwordHash, refreshTokens.Id, token, created, expires from Users left join refreshTokens on userId=users.Id where username=@username";
+            var query = "select users.Id, Username, passwordHash, from Users where username=@username";
          
             var results = Db.Connection.Query<User, RefreshToken, User>(query,
                 (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, parameters);
@@ -52,26 +52,32 @@ namespace MovieNightScheduler.Services
                 throw new AppException("Username or password is incorrect.");
             //Task.Run(() => results.SingleOrDefault(x => x.Username == req.Username && BCrypt.Verify(req.Password, x.PasswordHash)));
             Console.WriteLine(BCrypt.Verify(req.Password, results.First().PasswordHash));
-            var user =  Db.Connection.Get<User>(results.First().Id);
+            query = "select users.Id, Username, refreshTokens.Id, token, created, expires from Users left join refreshTokens on userId=users.Id where username=@username";
+            User user = Db.Connection.Query<User, RefreshToken, User>(query,
+                (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, parameters).First();
+
+            //var user =  Db.Connection.Get<User>(results.First().Id);
 
             //generate jwt and refresh token
             var jwtToken = JwtUtils.GenerateJwtToken(user);
             var refreshToken = JwtUtils.GenerateRefreshToken(ipAddress);
-            //add to user object
-            user.RefreshTokens.Add(refreshToken);
+            
 
             //remove old tokens
             // to be implemented removeOldRefreshTokens(user);
-            //remove inactive refresh tokes from user
+            //remove inactive refresh tokens from user
+            List<RefreshToken> oldTokens = user.RefreshTokens.FindAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
             user.RefreshTokens.RemoveAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
-
+            query = "delete from refreshTokens where id=@id";
+            Db.Connection.Execute(query, oldTokens);
+            //add to user object
+            user.RefreshTokens.Add(refreshToken);
             //save changes to DB
-            //Db.Connection.Update(user); no idea if this would work. Dodged by writing up a sql query instead
             refreshToken.UserId = user.Id;
-            //query = "update tokens set token=@token,  where userId=@UserId";
-            //Db.Connection.Execute(query, refreshToken);
-            Db.Connection.Insert(refreshToken);
-            
+            query = "Insert into refreshTokens(token, created, expires, createdByIp) values(@token, @created, @expires, @createByIp) ";
+            var rowsChanged = Db.Connection.Execute(query, refreshToken);
+            if (rowsChanged != 1)
+                throw new AppException("Database Insert Failed");
           /*  catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);

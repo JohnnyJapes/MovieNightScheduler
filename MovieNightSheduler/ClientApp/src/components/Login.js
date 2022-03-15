@@ -55,7 +55,7 @@ export class Login extends Component{
                     </div>
                     <div class="row mb-3">
                         <div class="col-lg-3">
-                            <button class="btn btn-success" type="submit">Register</button>
+                            <button class="btn btn-success" type="submit">Login</button>
                         </div>
                     </div>
                 </form>
@@ -81,7 +81,7 @@ export class Login extends Component{
             if (response.status === 200) {
                 this.setState({ username: "" });
                 this.setState({ password: "" });
-                localStorage.setItem("user", responseText);
+                localStorage.setItem("user", JSON.stringify(responseText));
                 ;
             } else {
                 alert("Username must be unique");

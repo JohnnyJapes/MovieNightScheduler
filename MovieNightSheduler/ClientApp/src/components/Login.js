@@ -1,10 +1,8 @@
-﻿import React, { Component } from 'react';
+﻿import React, { Component } from "react";
+import axios from "axios";
 
-
-export class Register extends Component {
-    static displayName = Register.name;
-
-     
+export class Login extends Component{
+    static displayName = Login.name;
 
     constructor(props) {
         super(props);
@@ -14,16 +12,16 @@ export class Register extends Component {
         };
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
-        
+
     }
 
-     handleSubmit = async (event) => {
+    handleSubmit = async (event) => {
         event.preventDefault();
         console.log(event.target.username.value + " " + event.target.password.value);
-        this.createUser(event.target.username.value, event.target.password.value)
+        this.login(event.target.username.value, event.target.password.value)
     }
 
-    handleChange= async(event) => {
+    handleChange = async (event) => {
         const target = event.target;
         const value = target.value;
         const name = target.name;
@@ -39,14 +37,14 @@ export class Register extends Component {
             <div>
                 <form onSubmit={this.handleSubmit}>
 
-                <div class="row mb-3 justify-content-center">
+                    <div class="row mb-3 justify-content-center">
 
-                    <div class="col-lg-6">
-                        <label for="username" class="form-label">Username</label>
+                        <div class="col-lg-6">
+                            <label for="username" class="form-label">Username</label>
                             <input type="text" required class="form-control"
                                 id="username" aria-describedby="userHelp" name="username"
                                 onChange={this.handleChange} value={this.state.username} ></input>
-                    </div>
+                        </div>
                         <div class="col-lg-6">
                             <label for="password" class="form-label">Password</label>
                             <input type="password" name="password" id="password" required class="form-control"
@@ -54,20 +52,19 @@ export class Register extends Component {
                         </div>
 
 
-                </div>
-                            <div class="row mb-3">
-                                <div class="col-lg-3">
-                                    <button class="btn btn-success" type="submit">Register</button>
-                                </div>
-                            </div>
-            </form>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-lg-3">
+                            <button class="btn btn-success" type="submit">Register</button>
+                        </div>
+                    </div>
+                </form>
             </div>
         );
     }
-
-    async createUser(username, password) {
+    async login(username, password) {
         try {
-            let response = await fetch("api/User/register", {
+            let response = await fetch("api/User/authenticate", {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -79,19 +76,21 @@ export class Register extends Component {
                 Username: username,
                 password: password
             }));
-           let responseText = await response.text();
-          if (response.status === 200) {
-                this.setState({ username : ""});
+            let responseText = await response.json();
+            console.log(responseText);
+            if (response.status === 200) {
+                this.setState({ username: "" });
                 this.setState({ password: "" });
+                localStorage.setItem("user", responseText);
                 ;
             } else {
-               alert("Username must be unique");
-               console.log(response.statusText);
+                alert("Username must be unique");
+                console.log("error");
             }
         }
-            catch (err) {
-                console.log(err);
-            }
-        
+        catch (err) {
+            console.log(err);
+        }
+
     }
 }

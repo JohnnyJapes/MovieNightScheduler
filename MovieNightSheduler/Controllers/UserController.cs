@@ -66,10 +66,10 @@ namespace MovieNightScheduler.Controllers
         public async Task<IActionResult> Authenticate([FromBody] AuthRequest model)
         {
             var response = await _userService.Authenticate(model, ipAddress());
-
-/*            if (response == null)
-                return BadRequest(new { message = "Username or password is incorrect" });
-*/
+            setTokenCookie(response.RefreshToken);
+            /*            if (response == null)
+                            return BadRequest(new { message = "Username or password is incorrect" });
+            */
             return Ok(response);
         }
         [AllowAnonymous]
@@ -82,6 +82,7 @@ namespace MovieNightScheduler.Controllers
             return Ok(response);
 
         }
+        [Authorize]
         [HttpPost("revoke-token")]
         public IActionResult RevokeToken(RevokeTokenRequest model)
         {
@@ -94,21 +95,22 @@ namespace MovieNightScheduler.Controllers
             _userService.RevokeToken(token, ipAddress());
             return Ok(new { message = "Token revoked" });
         }
-
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
             var user = await Db.Connection.GetAsync<User>(id);
             return Ok(user);
         }
-        [HttpPost]
-        public async Task<IActionResult> CreateUser(User newUser)
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> CreateUser(AuthRequest newUser)
         {
-            var query = "Insert into Users(username, password) values(@Username, @Password)";
+            var query = "Insert into Users(username, passwordHash) values(@Username, @PasswordHash)";
             var parameters = new DynamicParameters();
-            string passwordHash = BCrypt.HashPassword(newUser.PasswordHash);
+            string passwordHash = BCrypt.HashPassword(newUser.Password);
             parameters.Add("Username", newUser.Username, DbType.String);
-            parameters.Add("Password", passwordHash, DbType.String);
+            parameters.Add("PasswordHash", passwordHash, DbType.String);
             try
             {
                 int rows = await Db.Connection.ExecuteAsync(query, parameters);

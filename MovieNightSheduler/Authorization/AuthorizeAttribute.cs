@@ -1,8 +1,8 @@
-﻿
+﻿namespace MovieNightScheduler.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using MovieNightScheduler.Models;
-namespace MovieNightScheduler.Authorization;
+
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class AuthorizeAttribute : Attribute, IAuthorizationFilter
 {

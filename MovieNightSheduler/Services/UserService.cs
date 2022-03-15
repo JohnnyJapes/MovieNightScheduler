@@ -80,18 +80,6 @@ namespace MovieNightScheduler.Services
             removeOldRefreshTokens(user);
             //remove inactive refresh tokens from user
 
-           /* List<RefreshToken> oldTokens = user.RefreshTokens.FindAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
-            user.RefreshTokens.RemoveAll(x => !x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) <= DateTime.UtcNow);
-            query = "delete from refreshTokens where id=@id";
-            Db.Connection.Execute(query, oldTokens);*/
-
-           
-
-          /*  catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return null;
-            }*/
             return new AuthResponse(user, jwtToken, refreshToken.Token);
 
         }

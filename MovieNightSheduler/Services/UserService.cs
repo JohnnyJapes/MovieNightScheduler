@@ -39,19 +39,18 @@ namespace MovieNightScheduler.Services
 
         public async Task<AuthResponse> Authenticate(AuthRequest req, string ipAddress)
         {
+            if (req.Username == null || req.Password == null || req.Username == "NULL" || req.Password == "NULL")
+            {
+                throw new AppException("Null input not allowed");
+            };
             // wrapped in "await Task.Run" fetching user from a db
-            //User temp = new User{ Username= username, Password= password};
             var parameters = new DynamicParameters();
             parameters.Add("Username", req.Username, DbType.String);
-            //parameters.Add("Password", password, DbType.String);
             var query = "select users.Id, Username, passwordHash from Users where username=@username";
-         
+            //verify password
             var results = await Db.Connection.QueryAsync<User>(query, parameters);
-          //  Console.WriteLine(results.First().Username);
-           // Console.WriteLine(results.First().PasswordHash);
-            if (results.First().Username == null || !BCrypt.Verify(req.Password, results.First().PasswordHash))
+            if (results.Count() == 0 || !BCrypt.Verify(req.Password, results.First().PasswordHash))
                 throw new AppException("Username or password is incorrect.");
-            //Task.Run(() => results.SingleOrDefault(x => x.Username == req.Username && BCrypt.Verify(req.Password, x.PasswordHash)));
             Console.WriteLine(BCrypt.Verify(req.Password, results.First().PasswordHash));
 
             User user = results.First();

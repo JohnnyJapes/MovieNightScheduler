@@ -1,6 +1,6 @@
 ﻿import * as Yup from "yup";
 
-const RegisterSchema = Yup.object().shape({
+export const RegisterSchema = Yup.object().shape({
     username: Yup.string()
         .min(2, "Username must be over 2 characters long")
         .max(50, "Username can not be over 50 characters")

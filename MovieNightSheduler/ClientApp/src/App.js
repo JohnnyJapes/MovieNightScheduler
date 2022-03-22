@@ -5,8 +5,9 @@ import { Home } from './components/Home';
 import { FetchData } from './components/FetchData';
 import { Counter } from './components/Counter';
 import { Register } from './components/Register';
-import { Login } from './components/Login'
-import {UserHome} from './components/userHome'
+import { Login } from './components/Login';
+import { UserHome } from './components/userHome';
+import { NotFound } from './components/NotFound';
 
 import './custom.css'
 
@@ -19,7 +20,8 @@ export default function App() {
             <Routes>
                 <Route path='/' element={<UserHome />} />
                 <Route path='/register' element={<Register />}/>
-                <Route path='/login' element={<Login />}/>
+                <Route path='/login' element={<Login />} />
+                <Route path="*" element={<NotFound />} />
             </Routes>
       </Layout>
     );

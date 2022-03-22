@@ -74,7 +74,13 @@ namespace MovieNightScheduler.Services
             query = "select users.Id, Username, refreshTokens.Id, token, created, expires from Users left join refreshTokens on userId=users.Id where username=@username";
             results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query,
                 (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, parameters);
-
+            var result = results.GroupBy(r => r.Id).Select(g =>
+          {
+              var groupedUser = g.First();
+              groupedUser.RefreshTokens = g.Select(r => r.RefreshTokens.Single()).ToList();
+              return groupedUser;
+          });
+            user = result.First();
             //remove old tokens
             removeOldRefreshTokens(user);
             //remove inactive refresh tokens from user

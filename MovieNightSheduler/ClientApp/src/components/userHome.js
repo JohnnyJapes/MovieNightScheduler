@@ -1,7 +1,27 @@
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import axios from "axios";
+import auth from "../services/auth.service";
 
-export class UserHome extends Component {
+
+export function UserHome(props) {
+
+    const [user, setUser] = useState(auth.getCurrentUser())
+    return (
+        <div>
+            <h1>{user.username}'s Home</h1>
+
+
+        </div>
+
+
+    )
+}
+
+
+/*export class UserHome extends Component {
+    componentDidMount() {
+        auth.refreshToken();
+    }
     static displayName = UserHome.name;
     constructor(props) {
         super(props);
@@ -23,4 +43,4 @@ export class UserHome extends Component {
             
             )
     }
-}
+}*/

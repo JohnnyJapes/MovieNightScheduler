@@ -15,10 +15,11 @@ namespace MovieNightScheduler.Services
     using BCrypt.Net;
     public interface IUserService
     {
+        //authenticate/login service
         Task<AuthResponse> Authenticate(AuthRequest req, string ipAddress);
         Task<AuthResponse> RefreshToken(string token, string ipAddress);
         void RevokeToken(string token, string ipAddress);
-        User GetById(int id);
+        Task<User> GetById(int id);
       //  Task<IEnumerable<User>> GetAll();
     }
 
@@ -159,7 +160,8 @@ namespace MovieNightScheduler.Services
                 "expires " +
                 "from Users join refreshTokens on users.id=userId where token=@token";
             var results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; } ,new { @token = token, } );
-            if (results.First() == null)
+            var result = groupUserTokens(results);
+            if (result.First() == null)
                 throw new AppException("Invalid Token");
             //User user = results.First();
            /* query = "select * from refreshTokens where userId = @UserId";
@@ -169,7 +171,6 @@ namespace MovieNightScheduler.Services
 
             return results.First();
         }
-
         private async Task<User> getUserRefreshTokens(User user)
         {
             var query = "select " +
@@ -183,9 +184,10 @@ namespace MovieNightScheduler.Services
                "expires " +
                "from Users left join refreshTokens on users.id=userId where username=@username";
             var results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, new { @username = user.Username });
-            if (results.First() == null)
+            var result = groupUserTokens(results);
+            if (result.First() == null)
                 throw new AppException("Invalid User");
-            return results.First();
+            return result.First();
         }
         private RefreshToken rotateRefreshToken(RefreshToken refreshToken, string ipAddress)
         {
@@ -230,18 +232,49 @@ namespace MovieNightScheduler.Services
             token.ReasonRevoked = reason;
             token.ReplacedByToken = replacedByToken;
         }
-
-
-
-
-
-
-
-        public User GetById(int id)
+        public async Task<User> GetById(int id)
         {
-            var user = Db.Connection.Get<User>(id);
+            var query = "select users.Id, username," +
+                "first_name," +
+                "last_name," +
+                "movie_groups.Id, " +
+                "name, " +
+                "description " +
+                "join group_members on users.id=user_id " +
+                "join movie_groups on movie_groups.id=group_id" +
+                "where users.id=@id";
+            var results = await Db.Connection.QueryAsync<User, Group, User>(query, (user, group) => { user.Groups.Add(group); return user; }, new { @id= id});
+            var result = results.GroupBy(r => r.Id).Select(g =>
+            {
+                var groupedUser = g.First();
+                groupedUser.Groups = g.Select(r => r.Groups.Single()).ToList();
+                return groupedUser;
+            });
+            //var user = Db.Connection.Get<User>(id);
+            var user = result.First();
             if (user == null) throw new KeyNotFoundException("User not found");
             return user;
+        }
+        //turns query results into single user object with all associated tokens as a list
+        private IEnumerable<User> groupUserTokens(IEnumerable<User> results)
+        {
+            var result = results.GroupBy(r => r.Id).Select(g =>
+            {
+                var groupedUser = g.First();
+                groupedUser.RefreshTokens = g.Select(r => r.RefreshTokens.Single()).ToList();
+                return groupedUser;
+            });
+            return result;
+        }
+        private IEnumerable<User> groupUserGroups(IEnumerable<User> results)
+        {
+            var result = results.GroupBy(r => r.Id).Select(g =>
+            {
+                var groupedUser = g.First();
+                groupedUser.RefreshTokens = g.Select(r => r.RefreshTokens.Single()).ToList();
+                return groupedUser;
+            });
+            return result;
         }
 
 

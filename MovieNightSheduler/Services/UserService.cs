@@ -84,6 +84,9 @@ namespace MovieNightScheduler.Services
             user = result.First();
             //remove old tokens
             removeOldRefreshTokens(user);
+            //revoke all previous tokens
+
+
             //remove inactive refresh tokens from user
 
             return new AuthResponse(user, jwtToken, refreshToken.Token);
@@ -93,7 +96,7 @@ namespace MovieNightScheduler.Services
         {
             var user = await getUserByRefreshToken(token);
             //var query = "select id,userId,  token set token=@token,  where userId=@UserId";
-            await getUserRefreshTokens(user);
+            user = await getUserRefreshTokens(user);
             var refreshToken = user.RefreshTokens.Single(x => x.Token == token);
 
             if (refreshToken.IsRevoked)
@@ -160,8 +163,7 @@ namespace MovieNightScheduler.Services
                 "expires " +
                 "from Users join refreshTokens on users.id=userId where token=@token";
             var results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; } ,new { @token = token, } );
-            var result = groupUserTokens(results);
-            if (result.First() == null)
+            if (results.First() == null)
                 throw new AppException("Invalid Token");
             //User user = results.First();
            /* query = "select * from refreshTokens where userId = @UserId";
@@ -185,9 +187,18 @@ namespace MovieNightScheduler.Services
                "from Users left join refreshTokens on users.id=userId where username=@username";
             var results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; }, new { @username = user.Username });
             var result = groupUserTokens(results);
-            if (result.First() == null)
+     /*       var result = results.GroupBy(r => r.Id).Select(g =>
+            {
+                var groupedUser = g.First();
+                groupedUser.RefreshTokens = g.Select(r => r.RefreshTokens.Single()).ToList();
+                return groupedUser;
+            });*/
+            //Console.WriteLine(result.First().Username);
+            
+            var res = result.First();
+            if (res == null)
                 throw new AppException("Invalid User");
-            return result.First();
+            return res;
         }
         private RefreshToken rotateRefreshToken(RefreshToken refreshToken, string ipAddress)
         {
@@ -240,8 +251,9 @@ namespace MovieNightScheduler.Services
                 "movie_groups.Id, " +
                 "name, " +
                 "description " +
+                "from users " +
                 "join group_members on users.id=user_id " +
-                "join movie_groups on movie_groups.id=group_id" +
+                "join movie_groups on movie_groups.id=group_id " +
                 "where users.id=@id";
             var results = await Db.Connection.QueryAsync<User, Group, User>(query, (user, group) => { user.Groups.Add(group); return user; }, new { @id= id});
             var result = results.GroupBy(r => r.Id).Select(g =>

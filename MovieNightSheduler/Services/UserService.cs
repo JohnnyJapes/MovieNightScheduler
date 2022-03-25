@@ -106,9 +106,17 @@ namespace MovieNightScheduler.Services
                 List<RefreshToken> revokedTokens = user.RefreshTokens;
                 //query = "update refreshTokens set revoked=@revoked, revokedByIp=@revokedByIp, reasonRevoked=@reasonRevoked, replacedByToken=@replacedByToken where ";
                 //Db.Connection.Update<RefreshToken>(revokedTokens);
+                string q = "UPDATE refreshTokens set " +
+                    "revoked = @revoked, " +
+                    "revokedByIp = @revokedByIp, " +
+                    "reasonRevoked =@reasonRevoked, " +
+                    "replacedByToken= @replacedByToken, " +
+                    "where Id =@Id";
+
                 foreach (RefreshToken revokedToken in revokedTokens)
                 {
-                    Db.Connection.Update<RefreshToken>(revokedToken);
+                    // Db.Connection.Update<RefreshToken>(revokedToken);
+                    await Db.Connection.ExecuteAsync(q, revokedToken);
                 }
             }
             if (!refreshToken.IsActive)

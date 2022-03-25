@@ -99,7 +99,8 @@ namespace MovieNightScheduler.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
-            var user = await Db.Connection.GetAsync<User>(id);
+            //var user = await Db.Connection.GetAsync<User>(id);
+            var user = await _userService.GetById(id);
             return Ok(user);
         }
         [AllowAnonymous]

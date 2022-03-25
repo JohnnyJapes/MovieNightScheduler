@@ -1,0 +1,63 @@
+﻿using MovieNightScheduler.Models;
+
+using MovieNightScheduler.Authorization;
+using System.Data;
+using Dapper;
+using Dapper.Contrib.Extensions;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+
+namespace MovieNightScheduler.Services
+{
+    using Dapper;
+    using MovieNightScheduler.Helpers;
+    using Dapper.Contrib.Extensions;
+    public interface IGroupService
+    {
+        Task<Group> GetGroupById(int id);
+        Task<Group> GetGroupWithMembers(int id);
+        Task<Group> GetGroupByName(string name);
+        void CreateGroup(Group group);
+    }
+
+    public class GroupService : IUserService
+    {
+
+        //
+        public AppDb Db { get; set; }
+        private IJwtUtils JwtUtils;
+        private readonly AppSettings _appSettings;
+
+        public GroupService(AppDb db, IOptions<AppSettings> appSettings)
+        {
+            Db = db;
+            _appSettings = appSettings.Value;
+        }
+        public async Task<Group> GetGroupById(int id)
+        {
+            string query = "select id, name, description from movie_groups where id=@id";
+
+            var results = await Db.Connection.QueryAsync(query, new {@id = id});
+
+            return results.First();
+        }
+        public async void CreateGroup(Group group)
+        {
+            string query = "Insert Into movie_groups(name, description, admin_id) values(@name, @description, @adminId)";
+
+            var changed = await Db.Connection.ExecuteAsync(query, group);
+            if (changed != 1)
+                throw new AppException("Group Creation Failed on Database insertion");
+            return;
+        }
+
+        public async Task<Group> GetGroupByName(string name)
+        {
+            string query = "select id, name, description from movie_groups where name=@name";
+
+            var results = await Db.Connection.QueryAsync(query, new { @name = name });
+
+            return results.First();
+        }
+
+    }

@@ -20,12 +20,11 @@ namespace MovieNightScheduler.Services
         void CreateGroup(Group group);
     }
 
-    public class GroupService : IUserService
+    public class GroupService : IGroupService
     {
 
         //
         public AppDb Db { get; set; }
-        private IJwtUtils JwtUtils;
         private readonly AppSettings _appSettings;
 
         public GroupService(AppDb db, IOptions<AppSettings> appSettings)
@@ -37,7 +36,7 @@ namespace MovieNightScheduler.Services
         {
             string query = "select id, name, description from movie_groups where id=@id";
 
-            var results = await Db.Connection.QueryAsync(query, new {@id = id});
+            var results = await Db.Connection.QueryAsync(query, new { @id = id });
 
             return results.First();
         }
@@ -60,4 +59,22 @@ namespace MovieNightScheduler.Services
             return results.First();
         }
 
+        public async Task<Group> GetGroupWithMembers(int id)
+        {
+            string query = "select mg.id, admin_id, name, description, users.id, username from movie_groups as mg " +
+                "join group_members on group_id=mg.id join users on users.id=user_id where mg.id=@id";
+            var results = await Db.Connection.QueryAsync<Group, User, Viewing, Group>(query,
+                (group, user, viewing) => { group.Users.Add(user); group.Viewings.Add(viewing); return group; }, new { @id = id });
+            var result = results.GroupBy(r => r.Id).Select(g =>
+            {
+                var groupedUser = g.First();
+                groupedUser.Users = g.Select(r => r.Users.Single()).ToList();
+                groupedUser.Viewings = g.Select(r => r.Viewings.Single()).ToList();
+                return groupedUser;
+            });
+
+            return result.First();
+        }
+
     }
+}

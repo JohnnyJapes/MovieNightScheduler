@@ -15,6 +15,7 @@ namespace MovieNightScheduler.Services
     public interface IGroupService
     {
         Task<Group> GetGroupById(int id);
+        Task<Group> GetAdminId(int id)
         Task<Group> GetGroupWithMembers(int id);
         Task<Group> GetGroupByName(string name);
         void CreateGroup(Group group);
@@ -36,7 +37,15 @@ namespace MovieNightScheduler.Services
         {
             string query = "select id, name, description from movie_groups where id=@id";
 
-            var results = await Db.Connection.QueryAsync(query, new { @id = id });
+            var results = await Db.Connection.QueryAsync<Group>(query, new { @id = id });
+
+            return results.First();
+        }
+        public async Task<Group> GetAdminId(int id)
+        {
+            string query = "select id, admin_id from movie_groups where id=@id";
+
+            var results = await Db.Connection.QueryAsync<Group>(query, new { @id = id });
 
             return results.First();
         }
@@ -54,7 +63,7 @@ namespace MovieNightScheduler.Services
         {
             string query = "select id, name, description from movie_groups where name=@name";
 
-            var results = await Db.Connection.QueryAsync(query, new { @name = name });
+            var results = await Db.Connection.QueryAsync<Group>(query, new { @name = name });
 
             return results.First();
         }

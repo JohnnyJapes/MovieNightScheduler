@@ -14,11 +14,11 @@ namespace MovieNightScheduler.Models
         public Group()
         {
             this.Users = new List<User>();
-            this.Events = new List<Event>();
+            this.Viewings = new List<Viewing>();
         }
         public int Id { get; set; }
         public string Name { get; set; }
-        public User AdminId { get; set; }
+        public int AdminId { get; set; }
         public string? Description { get; set; }
         public List<User> Users { get; set; }
         public List<Viewing> Viewings { get; set; }

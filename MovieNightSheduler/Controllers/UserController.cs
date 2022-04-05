@@ -25,6 +25,7 @@ namespace MovieNightScheduler.Controllers
          public AppDb Db { get; set; }
        // private readonly ILogger<UserController> _logger;
          private IUserService _userService;
+        private User currentUser => (User)HttpContext.Items["User"];
 
         public UserController(AppDb db, IUserService userService)
         {
@@ -129,7 +130,7 @@ namespace MovieNightScheduler.Controllers
         }
         [HttpPut]
         //assumes Id is provided in user object
-        public async Task<IActionResult> UpdateUser(User User)
+        public async Task<IActionResult> UpdateUser(User user)
         {
             //   var query = "update Users set password = @password where username=@username";
             /*     var parameters = new DynamicParameters();
@@ -142,8 +143,10 @@ namespace MovieNightScheduler.Controllers
 
             //   await Db.Connection.ExecuteAsync(query, parameters);
             // await Db.Connection.Update
-            if (User.Id == 0) return BadRequest("No Id");
-            bool result = await Db.Connection.UpdateAsync(User);
+            if (currentUser.Id != user.Id)
+                return new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized }; 
+            if (user.Id == 0) return BadRequest("No Id");
+            bool result = await Db.Connection.UpdateAsync(user);
             if (result) return Ok("Update Successful");
             else return BadRequest("Update Failed");
         }

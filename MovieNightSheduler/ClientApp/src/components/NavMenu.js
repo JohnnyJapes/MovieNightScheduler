@@ -1,37 +1,65 @@
-import React, { Component, useState } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
+import auth from "../services/auth.service";
 
 
 export function NavMenu(props) {
-    const displayName = NavMenu.name;
-    const [collapsed, setCollapsed] = useState(true);
+  const displayName = NavMenu.name;
+  const [collapsed, setCollapsed] = useState(true);
 
-    return (
-        <header>
-            <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
-                <Container>
-                    <NavbarBrand tag={Link} to="/">MovieNightSheduler</NavbarBrand>
-                    <NavbarToggler onClick={() => setCollapsed(!collapsed)} className="mr-2" />
-                    <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!collapsed} navbar>
-                        <ul className="navbar-nav flex-grow">
-                            <NavItem>
-                                <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink tag={Link} className="text-dark" to="/register">Register</NavLink>
-                            </NavItem>
-                            <NavItem>
-                                <NavLink tag={Link} className="text-dark" to="/Login">Login</NavLink>
-                            </NavItem>
+  // const [user, setUser] = useState(auth.getCurrentUser());
+  const [loggedIn, setLoggedIn] = useState();
+  useEffect(() => {
+    let start = true;
+    if (props.user != null)
+      setLoggedIn(1)
+    else setLoggedIn(0);
+    start = false;
+  }, [props.user])
 
-                        </ul>
-                    </Collapse>
-                </Container>
-            </Navbar>
-        </header>
-    );
+  const logout = () => {
+    auth.logout();
+    props.setUser(null);
+  }
+  let loginButton;
+  let registerButton;
+  if (!loggedIn) {
+    loginButton = <NavLink tag={Link} className="text-dark" to="/Login">Login</NavLink>;
+    registerButton = <NavLink tag={Link} className="text-dark" to="/register">Register</NavLink>;
+  } else {
+    loginButton = <NavLink tag={Link} className="text-dark" to="/" onClick={logout}>Logout</NavLink>
+  }
+
+
+  return (
+    <header>
+      <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" light>
+        <Container>
+          <NavbarBrand tag={Link} to="/">MovieNightSheduler</NavbarBrand>
+          <NavbarToggler onClick={() => setCollapsed(!collapsed)} className="mr-2" />
+          <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!collapsed} navbar>
+            <ul className="navbar-nav flex-grow">
+              <NavItem>
+                <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink tag={Link} className="text-dark" to="/home">User-Home</NavLink>
+              </NavItem>
+              <NavItem>
+                {registerButton}
+              </NavItem>
+              <NavItem>
+                {loginButton}
+              </NavItem>
+
+            </ul>
+          </Collapse>
+        </Container>
+      </Navbar>
+    </header>
+  );
 
 }
 /*

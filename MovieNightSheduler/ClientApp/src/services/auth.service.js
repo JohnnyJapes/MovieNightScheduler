@@ -1,4 +1,5 @@
 ﻿import axios from "axios";
+import api from "./api"
 const API_URL = "https://localhost:44424/api/User";
 class AuthService {
     login(username, password) {
@@ -10,10 +11,10 @@ class AuthService {
                 Password: password
             }
         })
-/*            .post(API_URL + "/authenticate", {
-                username,
-                password
-            })*/
+            /*            .post(API_URL + "/authenticate", {
+                            username,
+                            password
+                        })*/
             .then(response => {
                 if (response.data.jwtToken)
                     localStorage.setItem("user", JSON.stringify(response.data));

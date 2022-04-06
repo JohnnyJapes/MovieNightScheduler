@@ -45,6 +45,8 @@ instance.interceptors.response.use(
                 }
             }
         }
+        if (err.response.data.message = "Invalid Token")
+            localStorage.removeItem("user");
         return Promise.reject(err);
     }
 

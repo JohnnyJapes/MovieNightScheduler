@@ -171,7 +171,7 @@ namespace MovieNightScheduler.Services
                 "expires " +
                 "from Users join refreshTokens on users.id=userId where token=@token";
             var results = await Db.Connection.QueryAsync<User, RefreshToken, User>(query, (user, refreshToken) => { user.RefreshTokens.Add(refreshToken); return user; } ,new { @token = token, } );
-            if (results.First() == null)
+            if (results.Count() == 0)
                 throw new AppException("Invalid Token");
             //User user = results.First();
            /* query = "select * from refreshTokens where userId = @UserId";
@@ -260,20 +260,29 @@ namespace MovieNightScheduler.Services
                 "name, " +
                 "description " +
                 "from users " +
-                "join group_members on users.id=user_id " +
-                "join movie_groups on movie_groups.id=group_id " +
+                "left join group_members on users.id=user_id " +
+                "left join movie_groups on movie_groups.id=group_id " +
                 "where users.id=@id";
-            var results = await Db.Connection.QueryAsync<User, Group, User>(query, (user, group) => { user.Groups.Add(group); return user; }, new { @id= id});
-            var result = results.GroupBy(r => r.Id).Select(g =>
+            var results = await Db.Connection.QueryAsync<User, Group, User>(query, (user, group) => { if (group != null) user.Groups.Add(group); return user; }, new { @id = id });
+            if (results.First().Groups.Count() > 0)
             {
-                var groupedUser = g.First();
-                groupedUser.Groups = g.Select(r => r.Groups.Single()).ToList();
-                return groupedUser;
-            });
+                var result = results.GroupBy(r => r.Id).Select(g =>
+                {
+                    var groupedUser = g.First();
+                    groupedUser.Groups = g.Select(r => r.Groups.Single()).ToList();
+                    return groupedUser;
+                });
+                if (result.First() == null) throw new KeyNotFoundException("User not found");
+                return result.First();
+            }
+            else { 
+                if (results.First() == null) throw new KeyNotFoundException("User not found");
+                return results.First();
+                 };
             //var user = Db.Connection.Get<User>(id);
-            var user = result.First();
-            if (user == null) throw new KeyNotFoundException("User not found");
-            return user;
+            //var user = result.First();
+            //if (user == null) throw new KeyNotFoundException("User not found");
+            //return user;
         }
         //turns query results into single user object with all associated tokens as a list
         private IEnumerable<User> groupUserTokens(IEnumerable<User> results)

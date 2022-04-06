@@ -38,6 +38,15 @@ namespace MovieNightScheduler.Controllers
             var result = await Db.Connection.GetAsync<Viewing>(id);
             return Ok(result);
         }
+        [HttpGet]
+        public async Task<IActionResult> GetViewingsByGroupId(int groupId)
+        {
+            if (groupId == null)
+                throw new AppException("Invalid Group");
+            string query = "select title, description, date, id from viewings where group_id = @groupId";
+            var results = await Db.Connection.QueryAsync<Viewing>(query, new {@groupid = groupId});
+            return Ok(results);
+        }
         [HttpPost]
         public async void CreateViewing(Viewing newViewing)
         {

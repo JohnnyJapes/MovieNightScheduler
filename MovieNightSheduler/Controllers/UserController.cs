@@ -78,6 +78,7 @@ namespace MovieNightScheduler.Controllers
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
+            //var session = Request.Cookies[]
             var response = await _userService.RefreshToken(refreshToken, ipAddress());
             setTokenCookie(response.RefreshToken);
             return Ok(response);
@@ -156,6 +157,15 @@ namespace MovieNightScheduler.Controllers
             bool result = await Db.Connection.DeleteAsync(new User() { Id = id });
             if (result) return Ok("Deletion Successful");
             else return BadRequest("Deletion Failed");
+        }
+        private void setCookie()
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = false,
+                Expires = DateTime.UtcNow.AddDays(5)
+            };
+            Response.Cookies.Append("authToken", "hidden", cookieOptions);
         }
         private void setTokenCookie(string token)
         {

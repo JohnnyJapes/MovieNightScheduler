@@ -7,5 +7,8 @@ class GroupService {
             Description: description,
         })
     }
+    async getGroup(id) {
+        return api.get("/Group/" + id)
+    }
 }
 export default new GroupService();

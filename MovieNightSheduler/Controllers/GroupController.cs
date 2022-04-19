@@ -64,7 +64,7 @@ namespace MovieNightScheduler.Controllers
         public async Task<IActionResult> CreateGroup(Group group)
         {
             group.AdminId = currentUser.Id;
-            _groupService.CreateGroup(group);
+            int changed = await _groupService.CreateGroup(group);
             return Ok("Group Creation Successful");
         }
         [HttpPut]

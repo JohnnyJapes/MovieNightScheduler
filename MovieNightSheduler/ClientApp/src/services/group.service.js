@@ -8,7 +8,7 @@ class GroupService {
         })
     }
     async getGroup(id) {
-        return api.get("/Group/" + id)
+        return await api.get("/Group/" + id)
     }
 }
 export default new GroupService();

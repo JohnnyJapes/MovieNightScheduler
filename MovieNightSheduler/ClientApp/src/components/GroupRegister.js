@@ -36,14 +36,17 @@ export function GroupRegister(props) {
             setGroup({ name: "", description: "" });
         }
         catch (err) {
-            console.log(err.response.data);
+            console.log(err.response);
 
             setAlertType("alert-danger");
             const regex = new RegExp('Duplicate')
-            if (regex.test(err.response.data))
-                setAlertMessage("Group name already in use");
-            else
-                setAlertMessage("Error Occurred")
+            if (err.response) {
+                if (regex.test(err.response.data))
+                    setAlertMessage("Group name already in use");
+                else
+                    setAlertMessage("Error Occurred")
+            }
+            else setAlertMessage("Error Occured")
             setShowAlert(true);
 
         }

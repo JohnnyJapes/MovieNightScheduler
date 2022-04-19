@@ -8,7 +8,7 @@ export const GroupSchema = Yup.object().shape({
         .required("Required"),
     description: Yup.string()
         .min(2, "Description must between 2-220 characters")
-        .max(60, "Description must between 2-220 characters")
+        .max(220, "Description must between 2-220 characters")
         .matches(/^[A-Za-z0-9!#$%&]+$/, { message: "use valid characters", excludeEmptyString: true })
         .required("required")
 });

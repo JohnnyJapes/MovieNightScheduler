@@ -30,6 +30,7 @@ export function NavMenu(props) {
     registerButton = <NavLink tag={Link} className="text-dark" to="/register">Register</NavLink>;
   } else {
     loginButton = <NavLink tag={Link} className="text-dark" to="/" onClick={logout}>Logout</NavLink>
+    registerButton = <NavLink tag={Link} className="text-dark" to="/createGroup">Create-Group</NavLink>
   }
 
 

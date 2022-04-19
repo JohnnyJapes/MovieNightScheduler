@@ -3,26 +3,51 @@ import axios from "axios";
 import auth from "../services/auth.service";
 import api from "../services/api";
 import userService from "../services/user.service";
-import { useNavigate, Redirect } from "react-router-dom";
+import viewingService from "../services/viewing.service";
+import { useNavigate, Redirect, Link } from "react-router-dom";
 
 export function UserHome(props) {
 
-    const [user, setUser] = useState(auth.getCurrentUser())
+    // const [user, setUser] = useState(auth.getCurrentUser())
     const [user2, setUser2] = useState();
     const [isBusy, setBusy] = useState(true);
     const [viewings, setViewings] = useState();
     let navigate = useNavigate();
     let response;
+    let views = [];
+    let response2
     useEffect(() => {
         let loggedIn = true;
         if (props.user == null) { navigate("/"); return; }
         console.log(props.user);
         const getUser = async () => {
 
-            response = await userService.getUserInfo(user.id)
+            response = await userService.getUserInfo(props.user.id)
             console.log(response);
             console.log(JSON.stringify(response.data));
-            setUser2(response.data);
+            await setUser2(response.data);
+            console.log(user2);
+            if (response.data.groups.length > 0) {
+                response.data.groups.forEach(id => {
+                    response2 = viewingService.getViewingByGroupID(id)
+                    // let response2 = await api.get({
+                    //     url: "/Viewing/",
+                    //     data: {
+                    //         groupId: id
+                    //     }
+                    // })
+                    views.push(response2.data);
+                });
+                setViewings(views);
+
+                // let response2 = await api.get({
+                //     url: "/Viewing/",
+                //     data: {
+                //         groupId: props.gorups
+                //     }
+                // });
+                // response.data.groups.viewings = {}
+            }
             if (loggedIn)
                 setBusy(false);
         }
@@ -39,7 +64,7 @@ export function UserHome(props) {
                 navigate("/");
             });
         return () => loggedIn = false;
-    }, [user])
+    }, [props.user])
 
     if (!isBusy) {
 
@@ -66,7 +91,7 @@ function List(props) {
     const groups = props.groups;
     const groupList = groups.map((group) => {
         console.log(group.name);
-        return <li key={group.id}>{group.name}</li>;
+        return <li key={group.id}><Link to={"/Group/" + group.id}>{group.name}</Link></li>;
     })
     return (<ul>{groupList}</ul>)
 }

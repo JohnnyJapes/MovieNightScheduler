@@ -49,6 +49,8 @@ namespace MovieNightScheduler.Models
         public string Description { get; set; }
         public DateTime Date { get; set; }
         public int Group_id { get; set; }
+        public string MovieTitle { get; set; }
+        public string Location { get; set; }
 
     }
 

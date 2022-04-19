@@ -28,7 +28,15 @@ namespace MovieNightScheduler.Controllers
         {
             Db = db;
         }
-
+        [HttpGet]
+        public async Task<IActionResult> GetViewingsByGroupId(int groupId)
+        {
+            if (groupId == null)
+                throw new AppException("Invalid Group");
+            string query = "select title, description, date, id from viewings where group_id = @groupId";
+            var results = await Db.Connection.QueryAsync<Viewing>(query, new { @groupid = groupId });
+            return Ok(results);
+        }
         [HttpGet]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetViewing(int id)
@@ -38,24 +46,16 @@ namespace MovieNightScheduler.Controllers
             var result = await Db.Connection.GetAsync<Viewing>(id);
             return Ok(result);
         }
-        [HttpGet]
-        public async Task<IActionResult> GetViewingsByGroupId(int groupId)
-        {
-            if (groupId == null)
-                throw new AppException("Invalid Group");
-            string query = "select title, description, date, id from viewings where group_id = @groupId";
-            var results = await Db.Connection.QueryAsync<Viewing>(query, new {@groupid = groupId});
-            return Ok(results);
-        }
+
         [HttpPost]
-        public async void CreateViewing(Viewing newViewing)
+        public async Task<IActionResult> CreateViewing(Viewing newViewing)
         {
             var result = await Db.Connection.QueryAsync<Group>("select admin_id from movie_groups where id = @id", new { @id = newViewing.Group_id });
             if (currentUser.Id != result.First().AdminId)
-                return;
-            string query = "insert into viewings(title, description, date, group_id) values(@title, @description, @date, @group_id)";
-            Db.Connection.ExecuteAsync(query, newViewing);
-            return;
+                return new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized };
+            string query = "insert into viewings(title, description, date, group_id, movieTitle, location) values(@title, @description, @date, @group_id, @movieTitle, @location)";
+            await Db.Connection.ExecuteAsync(query, newViewing);
+            return Ok();
         }
     }
 }
